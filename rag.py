@@ -5,14 +5,48 @@ from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
+
+
 
 # Load environment variables
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # Initialize the LLM (using OpenAI)
-llm = OpenAI(openai_api_key=openai_api_key)
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    api_key=openai_api_key,
+    temperature=0
+)
+
+# rag.py
+retriever = None
+
+def initialize_rag():
+    global retriever
+
+    loader = TextLoader('data/my_document.txt')
+    documents = loader.load()
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+
+    chunks = splitter.split_documents(documents)
+
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=openai_api_key
+    )
+
+    vector_store = FAISS.from_documents(chunks, embeddings)
+
+    retriever = vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5}
+    )
+
 
 # Function to set up the RAG system
 def setup_rag_system():
@@ -36,6 +70,7 @@ def setup_rag_system():
         search_kwargs={"k": 5}  # Adjust the number of results if needed
     )
     return retriever
+    
 
 # Function to get the response from the RAG system
 async def get_rag_response(query: str):
@@ -51,7 +86,7 @@ async def get_rag_response(query: str):
     prompt = [f"Use the following information to answer the question:\n\n{context}\n\nQuestion: {query}"]
 
     # Generate the final response using the language model (LLM)
-    generated_response = llm.generate(prompt)  # Pass as a list of strings
+    generated_response = llm.invoke(prompt) # Pass as a list of strings
     
     return generated_response
 

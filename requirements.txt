@@ -8,6 +8,7 @@ attrs==24.2.0
 certifi==2024.8.30
 charset-normalizer==3.3.2
 click==8.1.7
+chatopenai==0.27.0
 dataclasses-json==0.6.7
 distro==1.9.0
 exceptiongroup==1.2.2
