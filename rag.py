@@ -14,6 +14,35 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 # Initialize the LLM (using OpenAI)
 llm = OpenAI(openai_api_key=openai_api_key)
 
+
+# rag.py
+retriever = None
+
+def initialize_rag():
+    global retriever
+
+    loader = TextLoader('data/my_document.txt')
+    documents = loader.load()
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=50
+    )
+
+    chunks = splitter.split_documents(documents)
+
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=openai_api_key
+    )
+
+    vector_store = FAISS.from_documents(chunks, embeddings)
+
+    retriever = vector_store.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5}
+    )
+
+
 # Function to set up the RAG system
 def setup_rag_system():
     # Load the document
@@ -36,6 +65,7 @@ def setup_rag_system():
         search_kwargs={"k": 5}  # Adjust the number of results if needed
     )
     return retriever
+    
 
 # Function to get the response from the RAG system
 async def get_rag_response(query: str):
